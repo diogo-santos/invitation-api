@@ -31,11 +31,12 @@ public class InvitationApplicationTests {
 
 	@Test
 	public void givenPartnersWhenProcessInvitationThenReturnCountries() {
-		Country country = new Country(2, Arrays.asList("test1@email","test2@email"), "Ireland", "2019-01-01");
+		String countryName = "Ireland";
+		Country country = new Country(2, Arrays.asList("test1@email","test2@email"), countryName, "2019-01-01");
 		Countries expected = new Countries(Collections.singletonList(country));
 
-		Partner partner1 = new Partner("firstName", "lastName", "test1@email", "Ireland", Arrays.asList("2018-12-31","2019-01-01", "2019-01-02"));
-		Partner partner2 = new Partner("firstName", "lastName", "test2@email", "Ireland", Arrays.asList("2019-01-01", "2019-01-02", "2019-01-03"));
+		Partner partner1 = new Partner("firstName", "lastName", "test1@email", countryName, Arrays.asList("2018-12-31","2019-01-01", "2019-01-02"));
+		Partner partner2 = new Partner("firstName", "lastName", "test2@email", countryName, Arrays.asList("2019-01-01", "2019-01-02", "2019-01-03"));
 		List<Partner> partners = Arrays.asList(partner1, partner2);
 		Countries actual = service.processInvitation(partners);
 
