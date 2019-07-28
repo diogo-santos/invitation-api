@@ -14,12 +14,12 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TreeMap;
 
 import static java.time.LocalDate.parse;
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
-import static org.springframework.util.CollectionUtils.containsAny;
+import static java.util.stream.Collectors.toList;
 
 @Service
 public class InvitationBusinessProcess {
@@ -33,49 +33,40 @@ public class InvitationBusinessProcess {
         this.countriesService = countriesService;
     }
 
-    public int processInvitation() {
+    public ResponseEntity<Map> processInvitation() {
         Partners partners = partnersService.getPartners();
         Countries countries = processInvitation(partners.getPartners());
-        ResponseEntity response = countriesService.postCountries(countries);
-        return response.getStatusCodeValue();
+        return countriesService.postCountries(countries);
     }
 
-    public Countries processInvitation(List<Partner> partners) {
+    Countries processInvitation(List<Partner> partners) {
         List<Country> countryList = new ArrayList<>();
         Map<String, List<Partner>> countryPartnersMap = partners.stream().collect(groupingBy(Partner::getCountry));
-        for (Map.Entry<String, List<Partner>> countryPartnersEntry : countryPartnersMap.entrySet()) {
-
+        for (Map.Entry<String, List<Partner>> countryPartners : countryPartnersMap.entrySet()) {
             Map<LocalDate, List<String>> availableDatesMap = new TreeMap<>();
-            countryPartnersEntry.getValue().forEach(partner ->
+            countryPartners.getValue().forEach(partner ->
                 partner.getAvailableDates().forEach(date ->
-                        availableDatesMap.computeIfAbsent(parse(date), k -> new ArrayList<>()).add(partner.getEmail()))
-            );
+                        availableDatesMap.computeIfAbsent(parse(date), k -> new ArrayList<>()).add(partner.getEmail())));
 
             int attendeeCount = 0;
-            LocalDate startDate = null;
+            String startDate = null;
             List<String> attendees = new ArrayList<>();
             for (Map.Entry<LocalDate, List<String>> availableDatesAttendeesEntry : availableDatesMap.entrySet()) {
                 LocalDate currentDay = availableDatesAttendeesEntry.getKey();
                 List<String> attendeesCurrentDay = availableDatesAttendeesEntry.getValue();
                 List<String> attendeesNextDay = availableDatesMap.get(currentDay.plusDays(1));
+                List<String> attendeeList = attendeesNextDay != null ? attendeesCurrentDay.stream().filter(attendeesNextDay::contains).collect(toList()) : emptyList();
 
-                if (containsAny(attendeesCurrentDay, attendeesNextDay)) {
-                    attendeesCurrentDay.retainAll(attendeesNextDay);
-                    if (attendeesCurrentDay.size() > attendeeCount) {
-                        attendeeCount = attendeesCurrentDay.size();
-                        startDate = currentDay;
-                        attendees = attendeesCurrentDay;
-                    }
+                if (attendeeList.size() > attendeeCount) {
+                    attendeeCount = attendeeList.size();
+                    startDate = currentDay.toString();
+                    attendees = attendeeList;
                 }
             }
-
-            countryList.add(Country.builder()
-                            .name(countryPartnersEntry.getKey())
-                            .attendeeCount(attendeeCount)
-                            .startDate(Objects.toString(startDate, null))
-                            .attendees(attendees).build());
+            countryList.add(new Country(attendeeCount, attendees, countryPartners.getKey(), startDate));
         }
 
         return new Countries(countryList);
     }
+
 }
