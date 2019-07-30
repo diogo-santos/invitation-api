@@ -10,14 +10,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
+import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = RANDOM_PORT)
+@TestPropertySource(properties = "feign.hystrix.enabled=false")
 public class InvitationBusinessProcessTests {
 
 	@Autowired
@@ -25,7 +30,7 @@ public class InvitationBusinessProcessTests {
 
 	@Test
 	public void whenExecuteProcessInvitationThenReturnResponseEntity() {
-		ResponseEntity response = service.processInvitation();
+		ResponseEntity<Map> response = service.processInvitation();
 		int expected = HttpStatus.OK.value();
 		int current = response.getStatusCodeValue();
 		Assert.assertEquals(expected, current);

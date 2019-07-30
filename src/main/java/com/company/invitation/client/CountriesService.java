@@ -10,7 +10,7 @@ import java.util.Map;
 
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
-@FeignClient(value = "countries", url="${url.post.countries:}")
+@FeignClient(value = "countries", url="${url.post.countries:}", fallback = CountriesServiceFallback.class)
 public interface CountriesService {
     @RequestMapping(method = POST)
     ResponseEntity<Map> postCountries(@RequestBody Countries countries);
